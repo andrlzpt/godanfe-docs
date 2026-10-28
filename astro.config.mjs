@@ -9,7 +9,7 @@ import starlightThemeRapide from 'starlight-theme-rapide'
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://andrlzpt.github.io',
-  	base: '/danfe-docs',
+  	base: '/godanfe-docs',
 	integrations: [
 		starlight({
 			title: 'godanfe',
