@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: godanfe
+  version: 0.1.0
+  description: >-
+    Conversão síncrona de NF-e, NFC-e, CT-e, CT-e OS e NFS-e nacional em PDF.
+    A situação fiscal atual é responsabilidade do sistema chamador. 
+    A API não cancela documentos. 
+    A API não recebe nem verifica eventos. 
+    A API não consulta a SEFAZ/ADN.
+    A API não realiza validação XSD completa ou verificação de assinaturas digitais.
+    HTTP 200 indica geração do PDF, não comprovação de validade fiscal.
+paths:
+  /v1/pdf:
+    post:
+      operationId: renderPDF
+      summary: Gerar PDF sem marcação de cancelamento ou substituição
+      description: >-
+        Renderiza o XML original sem marcação de cancelamento ou substituição.
+        Não verifica se o documento foi cancelado ou substituído. 
+        Suporta NF-e FS/FS-DA (tpEmis 2/5), NFC-e offline 9 e CT-e/CT-e OS offline 2, além dos perfis SVC.
+        Os dados vêm do XML; offline pode não conter protocolo de autorização. 
+        EPEC da NF-e (tpEmis 4) exige a rota /v1/pdf/epec e retorna 422 nesta rota. 
+      requestBody:
+        $ref: '#/components/requestBodies/FiscalXML'
+      responses:
+        '200':
+          $ref: '#/components/responses/PDF'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '413':
+          $ref: '#/components/responses/BodyTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '503':
+          $ref: '#/components/responses/Busy'
+        '500':
+          $ref: '#/components/responses/RenderError'
+  /v1/pdf/canceladas:
+    post:
+      operationId: renderCancelledPDF
+      summary: Gerar PDF com marcação de cancelamento
+      description: >-
+        Recebe o XML original e aplica marca d'água 
+        CANCELADA (NF-e, NFC-e e NFS-e) ou CANCELADO (CT-e e CT-e OS). 
+        A escolha desta rota constitui declaração de cancelamento pelo chamador. 
+        Não efetiva nem confirma cancelamento perante o Fisco.
+      requestBody:
+        $ref: '#/components/requestBodies/FiscalXML'
+      responses:
+        '200':
+          $ref: '#/components/responses/PDF'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '413':
+          $ref: '#/components/responses/BodyTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '503':
+          $ref: '#/components/responses/Busy'
+        '500':
+          $ref: '#/components/responses/RenderError'
+  /v1/pdf/substituidas:
+    post:
+      operationId: renderSubstitutedPDF
+      summary: Gerar DANFSe com marcação de substituição
+      description: >-
+        Exclusivo para NFS-e nacional.
+        Recebe o XML original da nota que foi substituída e aplica marca d'água SUBSTITUÍDA.
+        Não deve ser usado apenas para indicar que uma nova NFS-e foi emitida em substituição a outra:
+        a nova substituta deve ser renderizada em /v1/pdf.
+        A escolha da rota declara a substituição pelo chamador.
+        A API não consulta nem confirma eventos ou situação fiscal.
+      requestBody:
+        $ref: '#/components/requestBodies/FiscalXML'
+      responses:
+        '200':
+          $ref: '#/components/responses/PDF'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '413':
+          $ref: '#/components/responses/BodyTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '503':
+          $ref: '#/components/responses/Busy'
+        '500':
+          $ref: '#/components/responses/RenderError'
+  /v1/pdf/denegadas:
+    post:
+      operationId: renderDeniedNFeReport
+      summary: Gerar relatório administrativo de NF-e denegada
+      description: >-
+        Exclusivo para NF-e modelo 55 em nfeProc 4.00 com protocolo de denegação fornecido
+        no mesmo XML. 
+        A situação é extraída de protNFe/infProt/cStat e o motivo de xMotivo;
+        não há declaração livre de denegação.
+        Aceita cStat 110 e códigos históricos 301/302/303 com motivo explícito de uso denegado.
+        Rejeições, notas autorizadas, protocolo ausente, motivo vazio e divergência de chave/ambiente retornam 422.
+        Exige número e data/hora do protocolo. Outros modelos retornam 422.
+        Produz relatório administrativo resumido marcado DENEGADA e SEM VALIDADE FISCAL, identificado como NÃO É DANFE. 
+        Não gera DANFE para circulação de mercadorias.
+        Preserva o motivo fornecido e identifica o protocolo como denegação, nunca
+        como autorização.
+        Não consulta a SEFAZ nem autentica assinatura/protocolo.
+      requestBody:
+        $ref: '#/components/requestBodies/FiscalXML'
+      responses:
+        '200':
+          $ref: '#/components/responses/PDF'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '413':
+          $ref: '#/components/responses/BodyTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '503':
+          $ref: '#/components/responses/Busy'
+        '500':
+          $ref: '#/components/responses/RenderError'
+  /v1/pdf/epec:
+    post:
+      operationId: renderEPECPDF
+      summary: Gerar DANFE de NF-e em contingência EPEC
+      description: >-
+        Exclusivo para NF-e modelo 55 com tpEmis=4.
+        Recebe multipart/form-data com 
+        xml (NF-e original) e 
+        epec (resposta retEvento, retEnvEvento ou procEventoNFe).
+        Extrai nProt e dhRegEvento de uma única resposta tpEvento 110140 e imprime
+        o recibo nas páginas, sem verificar assinatura, aceitação ou correspondência fiscal.
+        O cliente deve garantir a validade dos XMLs. 
+        Exige dhCont e xJust para apresentação. 
+        JSON ou XML direto retorna 415; multipart/XML inválido.
+        Recibo ausente retorna 400; modelo/modo incompatível.
+      requestBody:
+        $ref: '#/components/requestBodies/EPECRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PDF'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '413':
+          $ref: '#/components/responses/BodyTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableDocument'
+        '503':
+          $ref: '#/components/responses/Busy'
+        '500':
+          $ref: '#/components/responses/RenderError'
+components:
+  requestBodies:
+    EPECRequest:
+      required: true
+      description: Dois XMLs completos, processados em memória, sem validação fiscal ou consulta.
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [xml, epec]
+            properties:
+              xml:
+                type: string
+                format: binary
+                description: NF-e original NFe ou nfeProc, modelo 55, tpEmis 4.
+              epec:
+                type: string
+                format: binary
+                description: XML retEvento, retEnvEvento ou procEventoNFe com uma resposta EPEC 110140 e nProt/dhRegEvento.
+          encoding:
+            xml:
+              contentType: application/xml
+            epec:
+              contentType: application/xml
+    FiscalXML:
+      required: true
+      description: >-
+        Um documento XML fiscal original completo e válido, cuja validade fiscal é de responsabilidade
+        do chamador, diretamente no corpo ou na propriedade
+        xml de um objeto JSON. Para CT-e e CT-e OS, forneça respectivamente cteProc e
+        cteOSProc com protocolo fornecido, exceto nos respectivos modos offline 2, que
+        aceitam XML avulso sem protocolo; NFC-e normal exige nfeProc. NFS-e deve usar
+        o padrão nacional suportado, incluindo finalidades 0/1/2 da NT009 mapeadas para impressão. Não concatene arquivos XML de eventos ao documento.
+      content:
+        application/xml:
+          schema:
+            type: string
+        text/xml:
+          schema:
+            type: string
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [xml]
+            properties:
+              xml:
+                type: string
+                description: Conteúdo completo do XML fiscal original.
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro em português.
+  responses:
+    PDF:
+      description: PDF gerado conforme a rota solicitada; não constitui confirmação de situação fiscal.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            enum: [no-store]
+      content:
+        application/pdf:
+          schema:
+            type: string
+            format: binary
+    BadRequest:
+      description: Corpo/XML inválido, campo JSON desconhecido ou tipo de documento não suportado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    MethodNotAllowed:
+      description: Método não permitido; utilize POST.
+      headers:
+        Allow:
+          schema:
+            type: string
+            enum: [POST]
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BodyTooLarge:
+      description: Corpo da requisição excede o limite configurado em MAX_BODY_BYTES.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnsupportedMediaType:
+      description: Utilize application/xml, text/xml ou application/json.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableDocument:
+      description: Dados fiscais inconsistentes ou modalidade de impressão não suportada, inclusive nas rotas de canceladas, substituídas e relatório de denegadas.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Busy:
+      description: Limite compartilhado de renderizações simultâneas atingido.
+      headers:
+        Retry-After:
+          schema:
+            type: string
+            enum: ['1']
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RenderError:
+      description: Falha na geração do PDF.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

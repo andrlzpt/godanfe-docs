@@ -1,25 +1,34 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightOpenAPI, {
+  openAPISidebarGroups,
+} from 'starlight-openapi';
+import starlightThemeRapide from 'starlight-theme-rapide'
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://andrlzpt.github.io',
+  	base: '/danfe-docs',
 	integrations: [
 		starlight({
-			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			title: 'godanfe',
+			plugins: [
+				starlightOpenAPI([
+				{
+					base: 'api',
+					schema: './schemas/openapi.yaml',
+				},
+				]),
+				starlightThemeRapide()
+			],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/andrlzpt/godanfe-docs' }],
 			sidebar: [
 				{
-					label: 'Guides',
-					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
-					],
+					label: 'Introduction',
+					link: '/',
 				},
-				{
-					label: 'Reference',
-					items: [{ autogenerate: { directory: 'reference' } }],
-				},
+				...openAPISidebarGroups,
 			],
 		}),
 	],

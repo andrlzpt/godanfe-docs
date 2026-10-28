@@ -1,40 +1,83 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: godanfe
+description: API para gerar DANFE em PDF a partir de XML.
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+  title: GO, GO DANFE API!!
+  
+  tagline: Gere documentos DANFE em PDF a partir de arquivos XML de NF-e, utilizando uma API REST desenvolvida em Go.
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Documentação da API
+      link: /api/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: Solicitar token de acesso
+      link: https://forms.gle/5eQhXCA8skTuXgE99
       icon: external
       variant: minimal
 ---
 
+import { Image } from 'astro:assets';
 import { Card, CardGrid } from '@astrojs/starlight/components';
+import bender from '../../assets/bender-danfe.png';
 
-## Next steps
+<div style={{
+  maxWidth: '900px',
+  margin: '2rem auto',
+  textAlign: 'center'
+}}>
+  <Image
+    src={bender}
+    alt="Vou fazer meu próprio DANFE, com benchmarks e Golang!"
+    style={{
+      display: 'block',
+      width: '100%',
+      height: 'auto',
+      objectFit: 'contain',
+      borderRadius: '12px'
+    }}
+  />
+</div>
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
+## Simples, rápida e desenvolvida em GO
+
+Uma API REST para transformar arquivos XML de Notas Fiscais
+Eletrônicas (NF-e) em documentos DANFE no formato PDF.
+
+<CardGrid>
+  <Card title="Desenvolvida em GO" icon="seti:go">
+    Implementação em GOLANG, com foco em desempenho,
+    simplicidade e eficiência.
+  </Card>
+
+  <Card title="Envie o XML" icon="seti:xml">
+    Pode ser NF-e, NFC-e,
+    CT-e, CT-e OS ou
+    NFS-e nacional.
+  </Card>
+
+  <Card title="Receba o PDF" icon="seti:pdf">
+    Receba o DANFE correspondente
+    em PDF de forma síncrona.
+  </Card>
+
+  <Card title="API REST" icon="seti:json">
+    Integre a geração de documentos diretamente
+    aos seus sistemas utilizando requisições HTTP.
+  </Card>
 </CardGrid>
+
+## Como funciona?
+
+1. Obtenha um token de acesso.
+2. Envie um arquivo XML de NF-e para a API ([consulte a documentação](/api/)).
+3. Receba o DANFE gerado em formato PDF.
+
+## Quer testar?
+
+A API está disponível para testes mediante solicitação
+de um token de acesso.
+
+Preencha o formulário para solicitar seu token.
+Entrarei em contato pelo e-mail informado.
+
+[Solicitar acesso](https://forms.gle/5eQhXCA8skTuXgE99)
